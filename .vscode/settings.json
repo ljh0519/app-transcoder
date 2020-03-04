@@ -1,0 +1,11 @@
+{
+    "cmake.environment": {
+        "PKG_CONFIG_PATH": "/root/rtc-bridge/out/third_stage/lib/pkgconfig:/root/rtc-bridge/out/third_stage/lib64/pkgconfig:/usr/local/opt/openssl/lib/pkgconfig:/usr/local/opt/libffi/lib/pkgconfig:/usr/local/lib/pkgconfig",
+        "LD_LIBRARY_PATH": "/root/rtc-bridge/out/third_stage/lib:/root/rtc-bridge/out/third_stage/lib64"
+    },
+    "files.associations": {
+        "ostream": "cpp",
+        "iostream": "cpp"
+    },
+    "C_Cpp.default.configurationProvider": "vector-of-bool.cmake-tools"
+}

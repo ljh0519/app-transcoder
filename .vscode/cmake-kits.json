@@ -1,0 +1,8 @@
+[{
+    "name": "GCC 8.3.0",
+    "compilers": {
+        "C": "/usr/bin/gcc",
+        "CXX": "/usr/bin/g++",
+        "Fortran": "/usr/bin/gfortran"
+    }
+}]
