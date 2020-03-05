@@ -43,7 +43,11 @@ set(TRANSFMT_SOURCES
     src/NMediaFrame.hpp
     src/NPool.hpp
     src/NStr.hpp
-    src/NTranscoder.hpp
+    src/NVideoTranscoder.hpp
+    src/NVideoTranscoder.cpp
+    src/NRegion.hpp
+    src/YUVMixer.hpp
+    src/YUVMixer.cpp
 )
 
 add_library(core_static STATIC ${TRANSFMT_SOURCES})

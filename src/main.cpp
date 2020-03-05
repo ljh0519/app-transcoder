@@ -1,5 +1,5 @@
 #include "NLogger.hpp"
-#include "NTranscoder.hpp"
+#include "NVideoTranscoder.hpp"
 
 #define __STDC_CONSTANT_MACROS
 
@@ -40,10 +40,14 @@ int refresh_video(void* opaque) {
 #endif
 
 int main(int argc, char* argv[]) {
+#ifdef _WIN32
 	//std::string infile_str("C:/Users/Li/Desktop/640x480_output.h264p");
 	std::string infile_str("C:/Users/Li/Desktop/output_640x480.h264p");
 	std::string outfile_str("C:/Users/Li/Desktop/output.h264");
-
+#else
+    std::string infile_str("/tmp/output_640x480.h264p");
+    std::string outfile_str("/tmp/output.h264");
+#endif
 	FILE* in_file = nullptr;
 
 	FILE* out_file = nullptr;
