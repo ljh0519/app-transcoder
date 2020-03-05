@@ -2,10 +2,15 @@
 #include "NLogger.hpp"
 #include "NStr.hpp"
 
-#if defined(__linux__) || defined(__APPLE__)
-#include "g3log/g3log.hpp"
-#include "g3log/logworker.hpp"
-#endif
+// #if defined(__linux__) || defined(__APPLE__)
+// #include "g3log/g3log.hpp"
+// #include "g3log/logworker.hpp"
+// #else 
+// #define LOG2STD 1
+// #endif
+
+#define LOG2STD 1
+
 
 #include <iostream>
 #include <chrono>
@@ -144,7 +149,7 @@ namespace logfmt {
 
 struct NLoggerWorker{
 
-#if defined(__linux__) || defined(__APPLE__)
+#ifndef LOG2STD
     static std::string G3CustomLogToString(const g3::LogMessage& msg){
         return "";
 //        std::string out;
@@ -189,14 +194,14 @@ struct NLoggerWorker{
         log_to_console_ = log_to_console;
         
         if(!log_path.empty()){
-#if defined(__linux__) || defined(__APPLE__)
+#ifndef LOG2STD
             initG3(app, log_path);
 #endif
         }
     }
     
     void exit(){
-#if defined(__linux__) || defined(__APPLE__)
+#ifndef LOG2STD
         g3fsink_.reset();
         g3worker_.reset();
 #endif
@@ -211,7 +216,7 @@ struct NLoggerWorker{
     
     bool init_ = false;
     bool log_to_console_ = true;
-#if defined(__linux__) || defined(__APPLE__)
+#ifndef LOG2STD
     std::unique_ptr<g3::LogWorker> g3worker_;
     std::unique_ptr<g3::SinkHandle<g3::FileSink>> g3fsink_;
 #endif
@@ -264,7 +269,7 @@ void NLogger::output(const Level level, fmt::memory_buffer& mbuf){
         //printf("%.*s\n", (int)mbuf.size(), mbuf.data());
     }
     
-#if defined(__linux__) || defined(__APPLE__)
+#ifndef LOG2STD
     if(worker.g3fsink_){
         LOG(INFO) << mbuf.data();
     }

@@ -1,5 +1,5 @@
-﻿#ifndef __NTRANSCODER_HPP__
-#define __NTRANSCODER_HPP__
+#ifndef NVideoTranscoder_hpp
+#define NVideoTranscoder_hpp
 
 #include  <memory>
 #include <utility>
@@ -16,6 +16,7 @@ extern "C" {
 #include "libavutil/imgutils.h"
 #include "libavutil/log.h"
 };
+
 
 
 namespace nmedia {
@@ -1175,4 +1176,4 @@ namespace nmedia {
     };
 }
 
-#endif //__NTRANSCODER_HPP__
+#endif //NVideoTranscoder_hpp
