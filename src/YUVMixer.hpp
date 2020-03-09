@@ -3,6 +3,7 @@
 #define YUVMixer_hpp
 
 #include <memory> // std::shared_ptr
+#include <vector>
 #include "NRegion.hpp"
 extern "C" {
 #include "libavcodec/avcodec.h"
@@ -16,25 +17,25 @@ namespace nmedia {
             
             ~YUVMixer(){}
             
-            // è®¾ç½®è¾“å‡ºå›¾åƒå°ºå¯¸
+            // ÉèÖÃÊä³öÍ¼Ïñ³ß´ç
             virtual int outputConfig(int width, int height, uint32_t bkground_color) = 0;
             
-            // æ·»åŠ ä¸€ä¸ªRegion
-            // è¿”å›å€¼ >=0 è¡¨ç¤ºæˆåŠŸï¼Œè¿”å›å€¼ä¸ºRegionçš„index
+            // Ìí¼ÓÒ»¸öRegion
+            // ·µ»ØÖµ >=0 ±íÊ¾³É¹¦£¬·µ»ØÖµÎªRegionµÄindex
             virtual int addRegion(const Region& r) = 0;
             
-            // è®¾ç½®Regionåˆ—è¡¨ï¼Œæ—§çš„Regionåˆ—è¡¨è¢«æ¸…ç©ºå¹¶è®¾ç½®æˆæ–°çš„Regionåˆ—è¡¨
+            // ÉèÖÃRegionÁĞ±í£¬¾ÉµÄRegionÁĞ±í±»Çå¿Õ²¢ÉèÖÃ³ÉĞÂµÄRegionÁĞ±í
             virtual int setRegions(const std::vector<Region>& v) = 0; 
             
-            // è¾“å…¥1å¸§æ•°æ®åˆ°æŒ‡å®šRegion
+            // ÊäÈë1Ö¡Êı¾İµ½Ö¸¶¨Region
             virtual int inputRegionFrame(int region_index,
                                          const AVFrame * frame) = 0;
             
-            // è¾“å‡º1å¸§å›¾åƒ
+            // Êä³ö1Ö¡Í¼Ïñ
             virtual const AVFrame * outputFrame() = 0;
             
             static
-            shared Create();
+            shared Create(const std::string& name);
         };
     }
 }

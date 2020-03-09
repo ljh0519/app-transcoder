@@ -1,16 +1,25 @@
 
+#include <map>
+#include <algorithm>
+#include <set>
+
+#include "NLogger.hpp"
 #include "YUVMixer.hpp"
 
 #include "NMediaBasic.hpp"
+
 extern "C" {
 #include "libswscale/swscale.h"
+#include "libavutil/imgutils.h"
 };
 
 namespace nmedia {
     namespace video{
         class YUVMixerImpl : public YUVMixer{
+		public:
+			static const int OUT_FF_FMT = AV_PIX_FMT_YUV420P;
         private:
-            //åŒºåŸŸä¸­å°†è¢«ç»˜åˆ¶çš„å›¾åƒçš„å‚æ•°
+            //ÇøÓòÖĞ½«±»»æÖÆµÄÍ¼ÏñµÄ²ÎÊı
             struct ImgDrawParam {
                 //The starting position on background
                 int imgInBgx = -1;
@@ -24,85 +33,495 @@ namespace nmedia {
             };
             
             struct RegionImpl{
+				using shared = std::shared_ptr< RegionImpl>;
+
                 Region                  region_;
                 ImgDrawParam            imgConfig_;
-                AVPacket*               imgPacket_ = nullptr;
-                AVFrame*                inFrame_ = nullptr;
                 AVFrame*                swsFrame_ = nullptr;
                 uint8_t*                swsBuf_ = nullptr;
                 SwsContext*             imgConvertCtx_ = nullptr;
                 
-                //è·å–å½“å‰é€‚åº”æ¨¡å¼ä¸‹åº”ç¼©æ”¾æˆçš„åˆ†è¾¨ç‡
-                inline void getDstResolution(int srcWidth, int srcHeight) {
-                    
-                    if(ScalingMode::None == region_.scalinglMode) {
-                        imgConfig_.dstImgSize.width = srcWidth;
-                        imgConfig_.dstImgSize.height = srcHeight;
-                    } else if(ScalingMode::AspectFit == region_.scalinglMode) {      //TODO:è¿™ä¸ªæ¨¡å¼ç¼–å†™çš„æœ‰æ²¡æœ‰é—®é¢˜
-                        
-                        //ä»¥ä¸€æ¡è¾¹ä¸ºåŸºå‡†ç¼©æ”¾
-                        imgConfig_.dstImgSize.width = region_.width;
-                        imgConfig_.dstImgSize.height = imgConfig_.dstImgSize.width * srcHeight / srcWidth;
-                        if(imgConfig_.dstImgSize.height > region_.height) {
-                            //ä»¥å¦ä¸€æ¡è¾¹ä¸ºåŸºå‡†ç¼©æ”¾
-                            imgConfig_.dstImgSize.height = region_.height;
-                            imgConfig_.dstImgSize.width = srcWidth * imgConfig_.dstImgSize.height / srcHeight;
-                        }
-                        
-                    } else if(ScalingMode::AspectFill == region_.scalinglMode) {
-                        
-                        //ä»¥ä¸€æ¡è¾¹ä¸ºåŸºå‡†ç¼©æ”¾
-                        imgConfig_.dstImgSize.width = region_.width;
-                        imgConfig_.dstImgSize.height = imgConfig_.dstImgSize.width * srcHeight / srcWidth;
-                        if(imgConfig_.dstImgSize.height < region_.height) {
-                            //ä»¥å¦ä¸€æ¡è¾¹ä¸ºåŸºå‡†ç¼©æ”¾
-                            imgConfig_.dstImgSize.height = region_.height;
-                            imgConfig_.dstImgSize.width = srcWidth * imgConfig_.dstImgSize.height / srcHeight;
-                        }
-                        
-                    } else if(ScalingMode::Fill == region_.scalinglMode) {
-                        imgConfig_.dstImgSize.width = region_.width;
-                        imgConfig_.dstImgSize.height = region_.height;
-                    }
-                }
+			public:
+				~RegionImpl() {
+					if (imgConvertCtx_) {
+						sws_freeContext(imgConvertCtx_);
+						imgConvertCtx_ = nullptr;
+					}
+
+					if (swsBuf_) {
+						av_free(swsBuf_);
+						swsBuf_ = nullptr;
+					}
+
+					if (swsFrame_) {
+						av_frame_free(&swsFrame_);
+					}
+				}
+
+				// ½«ÊäÈëÖ¡µ÷ÕûÖÁÄ¿±ê·Ö±æÂÊ
+				// -1 : ´«Èë²ÎÊı²»ºÏ·¨
+				int zoom(const AVFrame* input) {
+					if (!input
+						|| !input->data) {
+						return -1;
+					}
+
+					if (imgConvertCtx_) {
+						sws_scale(imgConvertCtx_, (const uint8_t* const*)input->data, input->linesize, 0, input->height,
+							swsFrame_->data, swsFrame_->linesize);
+					}
+				}
+
+				// µ±´«ÈëµÄÊÓÆµÊı¾İ·Ö±æÂÊ¸Ä±äÊ±£¬ĞèÒªµ÷ÓÃ¸Ä·½·¨
+				// ´íÎó·µ»Ø¸ºÖµ£¬·ñÔò·µ»Ø0
+				// -1 : ´«Èë²ÎÊı²»ºÏ·¨
+				// -2 : ´´½¨Ëõ·ÅÆ÷Ê§°Ü
+				// -3 : Ìî³äÄ¿±êÇøÓòÊ§°Ü
+				int onChangeResolution(const int srcWidth, const int srcHeight, const AVPixelFormat typ) {
+					if (srcWidth <= 0
+						|| srcHeight <= 0
+						|| typ < 0) {
+						return -1;
+					}
+
+					int ret = 0;
+
+					getDstResolution(srcWidth, srcHeight);
+
+					calcImgRelatePos(imgConfig_.dstImgSize.width, imgConfig_.dstImgSize.height);
+
+					calcImgDrawOnBgSize();
+
+					if (imgConvertCtx_) {
+						sws_freeContext(imgConvertCtx_);
+					}
+
+					imgConvertCtx_ = sws_getContext(srcWidth, srcHeight, typ
+						, imgConfig_.dstImgSize.width, imgConfig_.dstImgSize.height
+						, (AVPixelFormat)OUT_FF_FMT, SWS_BICUBIC, NULL, NULL, NULL);
+					if (!imgConvertCtx_) {
+						//dbge(logger_, "Could not init resolution converter! index=[{}].", bgConfig_.index);
+						return -2;
+					}
+					
+					if (!swsFrame_) {
+						swsFrame_ = av_frame_alloc();
+					}
+
+					if(swsBuf_) {
+						av_free(swsBuf_);
+					}
+					
+					swsBuf_ = (uint8_t*)av_malloc(
+						av_image_get_buffer_size((AVPixelFormat)OUT_FF_FMT, imgConfig_.dstImgSize.width, imgConfig_.dstImgSize.height, 1)
+					);
+
+					if (av_image_fill_arrays(swsFrame_->data, swsFrame_->linesize
+						, swsBuf_, (AVPixelFormat)OUT_FF_FMT
+						, imgConfig_.dstImgSize.width
+						, imgConfig_.dstImgSize.height, 1) < 0) {
+						//dbge(logger_, "Could not init swsFrame buffer! index=[{}].", bgConfig_.index);
+						return -3;
+					}
+
+					swsFrame_->width = imgConfig_.dstImgSize.width;
+					swsFrame_->height = imgConfig_.dstImgSize.height;
+					swsFrame_->format = OUT_FF_FMT;
+
+					return 0;
+				}
+
+			private:
+				//»ñÈ¡µ±Ç°ÊÊÓ¦Ä£Ê½ÏÂÓ¦Ëõ·Å³ÉµÄ·Ö±æÂÊ
+				inline void getDstResolution(int srcWidth, int srcHeight) {
+
+					if (ScalingMode::None == region_.scalinglMode) {
+						imgConfig_.dstImgSize.width = srcWidth;
+						imgConfig_.dstImgSize.height = srcHeight;
+					}
+					else if (ScalingMode::AspectFit == region_.scalinglMode) {      //TODO:Õâ¸öÄ£Ê½±àĞ´µÄÓĞÃ»ÓĞÎÊÌâ
+
+					 //ÒÔÒ»Ìõ±ßÎª»ù×¼Ëõ·Å
+						imgConfig_.dstImgSize.width = region_.width;
+						imgConfig_.dstImgSize.height = imgConfig_.dstImgSize.width * srcHeight / srcWidth;
+						if (imgConfig_.dstImgSize.height > region_.height) {
+							//ÒÔÁíÒ»Ìõ±ßÎª»ù×¼Ëõ·Å
+							imgConfig_.dstImgSize.height = region_.height;
+							imgConfig_.dstImgSize.width = srcWidth * imgConfig_.dstImgSize.height / srcHeight;
+						}
+					}
+					else if (ScalingMode::AspectFill == region_.scalinglMode) {
+
+						//ÒÔÒ»Ìõ±ßÎª»ù×¼Ëõ·Å
+						imgConfig_.dstImgSize.width = region_.width;
+						imgConfig_.dstImgSize.height = imgConfig_.dstImgSize.width * srcHeight / srcWidth;
+						if (imgConfig_.dstImgSize.height < region_.height) {
+							//ÒÔÁíÒ»Ìõ±ßÎª»ù×¼Ëõ·Å
+							imgConfig_.dstImgSize.height = region_.height;
+							imgConfig_.dstImgSize.width = srcWidth * imgConfig_.dstImgSize.height / srcHeight;
+						}
+
+					}
+					else if (ScalingMode::Fill == region_.scalinglMode) {
+						imgConfig_.dstImgSize.width = region_.width;
+						imgConfig_.dstImgSize.height = region_.height;
+					}
+
+					//°´±ÈÀıÇóµÃ¶ÔÆë±ÈÀı·Ö±æÂÊ£¬ffmpeg¹æ¶¨Ëõ·ÅµÄÄ¿±ê³ß´ç±ØĞëÎª16µÄ±¶Êı
+					float ratio = 1.0f * imgConfig_.dstImgSize.width / imgConfig_.dstImgSize.height;
+					imgConfig_.dstImgSize.height = (imgConfig_.dstImgSize.height >> 4) << 4;
+					imgConfig_.dstImgSize.width = (int(ratio * imgConfig_.dstImgSize.height) >> 4) << 4;
+				}
+
+				//Get the position of the image in the background and get the starting point in the image to be printed
+				//¼ÆËã³öÍ¼ÏñÔÚÇøÓòÖĞµÄÆğÊ¼µãÒÔ¼°Í¼ÏñÖĞ±»»æÖÆÏñËØµÄÆğÊ¼µã
+				inline void calcImgRelatePos(const int imgWidth, const int imgHeight) {
+					imgConfig_.imgInBgx = region_.x;
+					imgConfig_.imgInBgy = region_.y;
+					imgConfig_.imgx = 0;
+					imgConfig_.imgy = 0;
+
+					if (ScalingMode::None == region_.scalinglMode) {
+						//Í¼Ğ¡±³¾°´ó£¬Ó¦¸Ã»­È«Í¼
+						//Í¼´ó±³¾°Ğ¡£¬Ó¦¸Ã»­Âú±³¾°
+						if (region_.width > imgWidth) {
+							// imgConfig_.startPosInImg.first = 0;
+							imgConfig_.imgInBgx += bisectSub(region_.width, imgWidth);
+						}
+						else {
+							imgConfig_.imgx = bisectSub(imgWidth, region_.width);
+							imgConfig_.imgInBgx += 0;
+						}
+
+						if (region_.height > imgHeight) {
+							// imgConfig_.imgy = 0;
+							imgConfig_.imgInBgy += bisectSub(region_.height, imgHeight);
+						}
+						else {
+							imgConfig_.imgy = bisectSub(imgHeight, region_.height);
+							imgConfig_.imgInBgy += 0;
+						}
+					}
+					else if (ScalingMode::AspectFit == region_.scalinglMode) {
+						imgConfig_.imgInBgx += abs(bisectSub(imgWidth, region_.width));
+						imgConfig_.imgInBgy += abs(bisectSub(imgHeight, region_.height));
+					}
+					else if (ScalingMode::AspectFill == region_.scalinglMode) {
+						if (region_.width < imgWidth) {
+							imgConfig_.imgx = bisectSub(imgWidth, region_.width);
+							// imgConfig_.imgInBgx += 0;
+						}
+						else if (region_.height < imgHeight) {
+							imgConfig_.imgy = bisectSub(imgHeight, region_.height);
+							// imgConfig_.imgInBgy += 0;
+						}
+					}
+					else if (ScalingMode::Fill == region_.scalinglMode) {
+						// imgConfig_.imgInBgx += 0;
+						// imgConfig_.imgInBgy += 0;
+					}
+				}
+
+				inline void calcImgDrawOnBgSize() {
+					// imgConfig_.drawSize;
+					// imgConfig_.imgInBgx;		//A1.x
+					// imgConfig_.imgInBgy;		//A1.y
+					// imgConfig_.imgSize;		//x2,y2
+					// region_;					//A0  x1,y1
+
+					if (imgConfig_.imgInBgx - region_.x + imgConfig_.dstImgSize.width
+						> region_.width) {
+						imgConfig_.drawSize.width = region_.width - imgConfig_.imgInBgx + region_.x;
+					}
+					else {
+						imgConfig_.drawSize.width = imgConfig_.dstImgSize.width;
+					}
+
+					if (imgConfig_.imgInBgy - region_.y + imgConfig_.dstImgSize.height
+						> region_.height) {
+						imgConfig_.drawSize.height = region_.height - imgConfig_.imgInBgy + region_.y;
+					}
+					else {
+						imgConfig_.drawSize.height = imgConfig_.dstImgSize.height;
+					}
+
+					//if (region_.width < imgConfig_.drawSize.width) {
+					//	imgConfig_.drawSize.width = region_.width;
+					//}
+					//
+					//if (region_.height < imgConfig_.drawSize.height) {
+					//	imgConfig_.drawSize.height = region_.height;
+					//}
+				}
+
+				inline int bisectSub(int val1, int val2) {
+					return (val1 - val2) / 2;
+				}
+
+				inline int abs(int val) {
+					return val > 0 ? val : (-val);
+				}
             };
-            
-            
+		private:
+			NLogger::shared logger_ = nullptr;
+			std::vector< RegionImpl::shared> regions_;
+			std::map<int, RegionImpl::shared> numbers_;
+			uint32_t					backgroundColor_ = 0x008080;		//YUV	ºÚ
+			AVFrame*					outFrame_ = nullptr;
+			uint8_t*					outBuf_ = nullptr;
         public:
-            
+
+			YUVMixerImpl(const std::string& name) :logger_(NLogger::Get(name)) { }
+
             ~YUVMixerImpl(){}
             
-            // è®¾ç½®è¾“å‡ºå›¾åƒå°ºå¯¸
+            // ÉèÖÃÊä³öÍ¼Ïñ³ß´ç
+			// bkground_color : RGB24
             virtual int outputConfig(int width, int height, uint32_t bkground_color) override{
-                return -1;
+				if (1 > width
+				||  1 > height) {
+					return -1;
+				}
+
+				av_log_set_level(AV_LOG_QUIET);
+
+				if (!outFrame_) {
+					outFrame_ = av_frame_alloc();
+				}
+
+				outFrame_->width = width;
+				outFrame_->height = height;
+				outFrame_->format = OUT_FF_FMT;
+
+				{
+					uint8_t R = bkground_color >> 16;
+					uint8_t	G = bkground_color >> 8;
+					uint8_t B = bkground_color;
+					uint8_t Y = 0.299 * R + 0.587 * G + 0.114 * B;
+					uint8_t V = 0.500 * R - 0.419 * G - 0.081 * B + 128;
+					uint8_t U = -0.169 * R - 0.331 * G + 0.500 * B + 128;
+
+					backgroundColor_ = ((uint32_t)Y << 16) | ((uint32_t)U << 8) | ((uint32_t)V);
+				}
+
+				if (outBuf_) {
+					av_free(outBuf_);
+				}
+
+				outBuf_ = (uint8_t*)av_malloc(
+					av_image_get_buffer_size((AVPixelFormat)OUT_FF_FMT, outFrame_->width, outFrame_->height, 1)
+				);
+
+				if (av_image_fill_arrays(outFrame_->data, outFrame_->linesize
+					, outBuf_, (AVPixelFormat)OUT_FF_FMT
+					, outFrame_->width
+					, outFrame_->height, 1) < 0) {
+					//dbge(logger_, "Could not init swsFrame buffer! index=[{}].", bgConfig_.index);
+					return -3;
+				}
+
+				//ÖØÖÃÄ¿±êyuvÍ¼ÏñÎªÄ³ÖÖµ¥Ò»ÑÕÉ«
+				resetBgByYuv420p(outFrame_, backgroundColor_);
+
+                return 0;
             }
             
-            // æ·»åŠ ä¸€ä¸ªRegion
-            // è¿”å›å€¼ >=0 è¡¨ç¤ºæˆåŠŸï¼Œè¿”å›å€¼ä¸ºRegionçš„index
+            // Ìí¼ÓÒ»¸öRegion
+            // ·µ»ØÖµ >=0 ±íÊ¾³É¹¦£¬·µ»ØÖµÎªRegionµÄindex
+			// -1 £º region²ÎÊı²»ºÏ·¨
+			// -2 £º region.indexÖØ¸´
             virtual int addRegion(const Region& r) override{
-                return -1;
+				if (!r.valid()) {
+					return -1;
+				}
+
+				auto search = numbers_.find(r.index);
+				if (search != numbers_.end()) {
+					return -2;
+				}
+
+				RegionImpl::shared regionImp = std::make_shared< RegionImpl>();
+				regionImp->region_ = r;
+
+				regions_.push_back(regionImp);
+				numbers_[r.index] = regionImp;
+
+				//¸ù¾İzÖá´ÎĞò½øĞĞÅÅĞò
+				std::sort(regions_.begin(), regions_.end(), [](RegionImpl::shared a, RegionImpl::shared b) {
+					return a->region_.zOrder < b->region_.zOrder;
+				});
+
+                return r.index;
             }
             
-            // è®¾ç½®Regionåˆ—è¡¨ï¼Œæ—§çš„Regionåˆ—è¡¨è¢«æ¸…ç©ºå¹¶è®¾ç½®æˆæ–°çš„Regionåˆ—è¡¨
+            // ÉèÖÃRegionÁĞ±í£¬¾ÉµÄRegionÁĞ±í±»Çå¿Õ²¢ÉèÖÃ³ÉĞÂµÄRegionÁĞ±í
+			// Èç¹ûĞÂµÄregionÁĞ±íÖĞÓĞregion²ÎÊı²»ÕıÈ·£¬Ôò²»»áÓĞÈÎºÎregion±»³É¹¦ÉèÖÃ
+			// ´íÎó·µ»Ø´íÎóÂë£¨¸ºÖµ£©£¬region²ÎÊı´íÎó·µ»Øindex£¬ÕıÈ··µ»Ø0
+			// -1 £º indexÖØ¸´
+			// <= 0 : region²ÎÊı·Ç·¨£¬·µ»Ø·Ç·¨index
             virtual int setRegions(const std::vector<Region>& v) override{
-                return -1;
+				regions_.clear();
+				numbers_.clear();
+
+				{
+					for (auto& i : v) {
+						//Region²ÎÊıºÏ·¨ĞÔ¼ì²é
+						if (!i.valid()) {
+							return i.index;
+						}
+						numbers_[i.index] = nullptr;
+					}
+
+					//Region.indexÖØ¸´ĞÔ¼ì²é
+					if (v.size() != numbers_.size()) {
+						return -1;
+					}
+					numbers_.clear();
+				}
+
+				for (auto& i : v) {
+					RegionImpl::shared regionImp = std::make_shared< RegionImpl>();
+					regionImp->region_ = i;
+
+					regions_.push_back(regionImp);
+					numbers_[i.index] = regionImp;
+				}
+
+				//¸ù¾İzÖá´ÎĞò½øĞĞÅÅĞò
+				std::sort(regions_.begin(), regions_.end(), [](RegionImpl::shared a, RegionImpl::shared b) {
+					return a->region_.zOrder < b->region_.zOrder;
+				});
+
+                return 0;
             }
             
-            // è¾“å…¥1å¸§æ•°æ®åˆ°æŒ‡å®šRegion
+            // ÊäÈë1Ö¡Êı¾İµ½Ö¸¶¨Region£¬´íÎó·µ»Ø¸ºÖµ£¬·ñÔò·µ»Ø0
+			// -1 : frameÎªnull
+			// -2 : Ã»ÓĞÕÒµ½¶ÔÓ¦region
+			// -3 : ·Ö±æÂÊ±ä¸ü³ö´í
             virtual int inputRegionFrame(int region_index,
                                          const AVFrame * frame) override{
-                return -1;
+				if (!frame
+					|| !frame->data) {
+					return -1;
+				}
+
+				auto search = numbers_.find(region_index);
+				if (search == numbers_.end()) {
+					return -2;
+				}
+
+				if (frame->width != search->second->imgConfig_.srcImgSize.width
+				||	frame->height != search->second->imgConfig_.srcImgSize.height) {
+					int ret = search->second->onChangeResolution(frame->width, frame->height, (AVPixelFormat)frame->format);
+					if (ret < 0) {
+						dbge(logger_, "change resolution error! index=[{}], error=[{}].", search->first, ret);
+						return -3;
+					}
+					search->second->imgConfig_.srcImgSize.width = frame->width;
+					search->second->imgConfig_.srcImgSize.height = frame->height;
+				}
+
+                return search->second->zoom(frame);
             }
             
-            // è¾“å‡º1å¸§å›¾åƒ
+            // Êä³ö1Ö¡Í¼Ïñ
             virtual const AVFrame * outputFrame() override{
-                return nullptr;
+				if (!outFrame_
+				||	!outBuf_) {
+					return nullptr;
+				}
+
+				resetBgByYuv420p(outFrame_, backgroundColor_);
+
+				for (auto i : regions_) {
+					if (brushYUV420P(i->imgConfig_, i->swsFrame_) < 0) {
+						return nullptr;
+					}
+				}
+
+                return outFrame_;
             }
             
+		private:
+			void resetBgByYuv420p(AVFrame* frame, uint32_t yuvColor) {
+				if (!frame
+					|| !frame->data) {
+					return ;
+				}
+
+				memset(frame->data[0], (uint8_t)(yuvColor>>16), frame->width * frame->height * 1 * sizeof(uint8_t));
+				memset(frame->data[1], (uint8_t)(yuvColor>>8),	frame->width * frame->height / 4 * sizeof(uint8_t));
+				memset(frame->data[2], (uint8_t)(yuvColor),		frame->width * frame->height / 4 * sizeof(uint8_t));
+			}
+
+			//½«¶àÂ·ÇøÓò»­Èë»­²¼ÖĞ
+			int brushYUV420P(const ImgDrawParam& imgConfig, const AVFrame* src) {
+
+				if (!outBuf_ || !outFrame_) {
+					dbge(logger_, "An error occurred while painting, the parameter is NULL!");
+					return -1;
+				} else
+				if (!src || !src->data) {
+					return 0;
+				}
+
+				int drawWidth = imgConfig.drawSize.width;
+				int drawHeight = imgConfig.drawSize.height;
+
+				if (imgConfig.drawSize.width + imgConfig.imgInBgx > outFrame_->width) {
+					drawWidth = outFrame_->width - imgConfig.imgInBgx;
+				}
+
+				if (imgConfig.drawSize.height + imgConfig.imgInBgy > outFrame_->height) {
+					drawHeight = outFrame_->height - imgConfig.imgInBgy;
+				}
+				//int drawWidth = (imgConfig.drawSize.width + imgConfig.imgInBgx > outFrame_->width) ? (outFrame_->width - imgConfig.imgInBgx) ? imgConfig.drawSize.width;
+
+				//Ò×¿´°æ±¾
+				//int nYIndex = 0;
+				//int nUVIndex = 0;
+
+				//for (int i = 0; i < imgHeight; ++i) {
+				//	//Y
+				//	memcpy(dst->data[0] + (i + y) * dst->width + x, src->data[0] + (nYIndex + imgy) * src->width + imgx, imgWidth);
+				//	++nYIndex;
+				//}
+
+				//for (int i = 0; i < imgHeight / 2; ++i) {
+				//	//U
+				//	memcpy(dst->data[1] + (i + y / 2) * (dst->width / 2) + x / 2, src->data[1] + (nUVIndex + imgy / 2) * (src->width / 2) + imgx / 2 , imgWidth / 2);
+				//	//V
+				//	memcpy(dst->data[2] + (i + y / 2) * (dst->width / 2) + x / 2, src->data[2] + (nUVIndex + imgy / 2) * (src->width / 2) + imgx / 2, imgWidth / 2);
+				//	++nUVIndex;
+				//}
+
+				//¼ò»¯°æ±¾
+				for (int i = 0; i < drawHeight; ++i) {
+					//Y
+					memcpy(outFrame_->data[0] + (i + imgConfig.imgInBgy) * outFrame_->width + imgConfig.imgInBgx
+						, src->data[0] + (i + imgConfig.imgy) * src->width + imgConfig.imgx
+						, drawWidth);
+
+					if (!(i % 2)) {
+						//U
+						memcpy(outFrame_->data[1] + (i + imgConfig.imgInBgy) / 2 * (outFrame_->width / 2) + imgConfig.imgInBgx / 2
+							, src->data[1] + (i + imgConfig.imgy) / 2 * (src->width / 2) + imgConfig.imgx / 2
+							, drawWidth / 2);
+
+						//V
+						memcpy(outFrame_->data[2] + (i + imgConfig.imgInBgy) / 2 * (outFrame_->width / 2) + imgConfig.imgInBgx / 2
+							, src->data[2] + (i + imgConfig.imgy) / 2 * (src->width / 2) + imgConfig.imgx / 2
+							, drawWidth / 2);
+					}
+				}
+
+				return 0;
+			}
         };
         
-        YUVMixer::shared YUVMixer::Create(){
-            return std::make_shared<YUVMixerImpl>();
+        YUVMixer::shared YUVMixer::Create(const std::string& name){
+            return std::make_shared<YUVMixerImpl>(name);
         }
     }
 }

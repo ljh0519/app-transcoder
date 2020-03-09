@@ -76,13 +76,13 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../third;$(FFMPEG32)\include;$(EXTLIB)\sdl2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../third;$(EXTLIB)\include\sdl2;$(EXTLIB)\include\ffmpeg;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp14</LanguageStandard>
       <PreprocessorDefinitions>FMT_HEADER_ONLY=1;FMT_STRING_ALIAS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>$(FFMPEG32)/lib;$(EXTLIB)\sdl2\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(EXTLIB)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>avcodec.lib;avdevice.lib;avfilter.lib;avformat.lib;avutil.lib;postproc.lib;swresample.lib;swscale.lib;SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -103,13 +103,16 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(EXTLIB)\include\sdl2;$(EXTLIB)\include\ffmpeg;..\third;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>FMT_HEADER_ONLY=1;FMT_STRING_ALIAS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(EXTLIB)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -129,15 +132,23 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\old_transcoder_main.cpp" />
     <ClCompile Include="..\src\NLogger.cpp" />
+    <ClCompile Include="..\src\NVideoTranscoder.cpp" />
+    <ClCompile Include="..\src\SDLDisplay.cpp" />
+    <ClCompile Include="..\src\YUVMixer.cpp" />
+    <ClCompile Include="..\src\yuv_mix_main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\NLogger.hpp" />
     <ClInclude Include="..\src\NMediaBasic.hpp" />
     <ClInclude Include="..\src\NMediaFrame.hpp" />
     <ClInclude Include="..\src\NPool.hpp" />
+    <ClInclude Include="..\src\NRegion.hpp" />
     <ClInclude Include="..\src\NStr.hpp" />
-    <ClInclude Include="..\src\NTranscoder.hpp" />
+    <ClInclude Include="..\src\NVideoTranscoder.hpp" />
+    <ClInclude Include="..\src\SDLDisplay.hpp" />
+    <ClInclude Include="..\src\YUVMixer.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

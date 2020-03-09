@@ -36,18 +36,18 @@ namespace nmedia {
         class Region{
 		public:
 			//contentMode : https://github.com/ksvc/KSYMediaPlayer_iOS/wiki/contentMode
-			//é€‚åº”æ¨¡å¼
+			//ÊÊÓ¦Ä£Ê½
 			enum contentMode {
 				UNKOWN,
-				ScalingModeNone,        //æ— ç¼©æ”¾
-				ScalingModeAspectFit,   //åŒæ¯”é€‚é…ï¼Œç­‰æ¯”ç¼©æ”¾ï¼ŒæŸä¸ªæ–¹å‘ä¼šæœ‰é»‘è¾¹
-				ScalingModeAspectFill,  //åŒæ¯”å¡«å……ï¼Œæ— é»‘è¾¹ï¼ŒæŸä¸ªæ–¹å‘çš„æ˜¾ç¤ºå†…å®¹å¯èƒ½è¢«è£å‰ª
-				ScalingModeFill         //æ»¡å±å¡«å……ï¼Œç ´ååŸè§†é¢‘æ¯”ä¾‹ï¼Œä¸åŸå§‹è§†é¢‘æ¯”ä¾‹ä¸ä¸€è‡´
+				ScalingModeNone,        //ÎŞËõ·Å
+				ScalingModeAspectFit,   //Í¬±ÈÊÊÅä£¬µÈ±ÈËõ·Å£¬Ä³¸ö·½Ïò»áÓĞºÚ±ß
+				ScalingModeAspectFill,  //Í¬±ÈÌî³ä£¬ÎŞºÚ±ß£¬Ä³¸ö·½ÏòµÄÏÔÊ¾ÄÚÈİ¿ÉÄÜ±»²Ã¼ô
+				ScalingModeFill         //ÂúÆÁÌî³ä£¬ÆÆ»µÔ­ÊÓÆµ±ÈÀı£¬ÓëÔ­Ê¼ÊÓÆµ±ÈÀı²»Ò»ÖÂ
 			};
 
-			//åŒºåŸŸæœ¬èº«çš„å‚æ•°
+			//ÇøÓò±¾ÉíµÄ²ÎÊı
 			struct RegionConfig {
-				//       åæ ‡å®šä¹‰
+				//       ×ø±ê¶¨Òå
 				//          x
 				//  ------------------->
 				//  | ----------------
@@ -61,7 +61,7 @@ namespace nmedia {
 				int             y = -1;
 				int             width = -1;
 				int             height = -1;
-				int             zOrder = -1;        //zOrderæ•°å­—è¶Šå¤§ï¼Œæ‰€åœ¨å±‚æ¬¡è¶Šé«˜ï¼Œè¶Šä¸ä¼šè¢«é®æŒ¡ã€‚
+				int             zOrder = -1;        //zOrderÊı×ÖÔ½´ó£¬ËùÔÚ²ã´ÎÔ½¸ß£¬Ô½²»»á±»ÕÚµ²¡£
 				int             fillMode = contentMode::ScalingModeAspectFit;
 
 				bool isRegionLegality() const {
@@ -80,7 +80,7 @@ namespace nmedia {
 				}
 			};
 
-			//åŒºåŸŸä¸­å°†è¢«ç»˜åˆ¶çš„å›¾åƒçš„å‚æ•°
+			//ÇøÓòÖĞ½«±»»æÖÆµÄÍ¼ÏñµÄ²ÎÊı
 			struct ImgDrawParam {
 				//The starting position on background
 				int imgInBgx = -1;
@@ -124,7 +124,7 @@ namespace nmedia {
 				//}
             }
 
-			//åˆå§‹åŒ–æ”¹åŒºåŸŸ
+			//³õÊ¼»¯¸ÄÇøÓò
             int init(const RegionConfig& config) {
                 if(!config.isRegionLegality()) {
                     return -1;
@@ -134,7 +134,7 @@ namespace nmedia {
                 return 0;
             }
 
-			//å½“ä¼ å…¥çš„è§†é¢‘æ•°æ®åˆ†è¾¨ç‡æ”¹å˜æ—¶ï¼Œéœ€è¦è°ƒç”¨æ”¹æ–¹æ³•
+			//µ±´«ÈëµÄÊÓÆµÊı¾İ·Ö±æÂÊ¸Ä±äÊ±£¬ĞèÒªµ÷ÓÃ¸Ä·½·¨
             int onChangeResolution(const int srcWidth, const int srcHeight, const NCodec::Type typ) {
                 if(srcWidth <= 0 
                 || srcHeight <= 0
@@ -169,8 +169,8 @@ namespace nmedia {
                 return 0;
             }
 
-			//å½“æœ‰æ•°æ®è¾“å…¥æ—¶ï¼Œè¯¥åŒºåŸŸåº”è¯¥è°ƒç”¨è¿™ä¸ªæ–¹æ³•
-			//è¿™é‡Œä¼ å…¥çš„æ•°æ®åº”è¯¥æºå¸¦åˆ†è¾¨ç‡ä¿¡æ¯
+			//µ±ÓĞÊı¾İÊäÈëÊ±£¬¸ÃÇøÓòÓ¦¸Ãµ÷ÓÃÕâ¸ö·½·¨
+			//ÕâÀï´«ÈëµÄÊı¾İÓ¦¸ÃĞ¯´ø·Ö±æÂÊĞÅÏ¢
             int onInputFrame(NVideoFrame* inFrame) {
 
                 NCodec::Type typ = inFrame->getCodecType();
@@ -194,17 +194,17 @@ namespace nmedia {
                 return transcoder(inFrame, size);
             }
 
-			//è·å–åŒºåŸŸä¸­å°†è¢«ç»˜åˆ¶çš„æµçš„æ•°æ®
+			//»ñÈ¡ÇøÓòÖĞ½«±»»æÖÆµÄÁ÷µÄÊı¾İ
             const AVFrame* getDrawFrame() const {
                 return swsFrame_;
             }
 			
-			//è·å–åŒºåŸŸä¸­æµçš„é…ç½®ä¿¡æ¯
+			//»ñÈ¡ÇøÓòÖĞÁ÷µÄÅäÖÃĞÅÏ¢
             const ImgDrawParam& getDrawParam() const {
                 return imgConfig_;
             }
 
-			//è·å–åŒºåŸŸçš„é…ç½®ä¿¡æ¯
+			//»ñÈ¡ÇøÓòµÄÅäÖÃĞÅÏ¢
             const RegionConfig& getRegionCfg() const {
                 return bgConfig_;
             }
@@ -213,7 +213,7 @@ namespace nmedia {
                 return imgCodecCtx_ && imgParserCtx_;
             }
 
-			//åˆ·æ–°åŒºåŸŸçš„è§£ç å™¨
+			//Ë¢ĞÂÇøÓòµÄ½âÂëÆ÷
             void flushDecoder() const {
                 if(!isOpened()) {
                     return ;
@@ -254,7 +254,7 @@ namespace nmedia {
                 av_frame_unref(inFrame_);
             }
 
-			//å…³é—­åŒºåŸŸ
+			//¹Ø±ÕÇøÓò
             void close() {
                 flushDecoder();
 
@@ -297,9 +297,9 @@ namespace nmedia {
 			}
 
         private:
-			//è¿›è¡Œè½¬ç ï¼Œä¼ å…¥çš„è§†é¢‘å¸§å¯ä»¥ä¸æºå¸¦åˆ†è¾¨ç‡ä¿¡æ¯ï¼Œå› ä¸ºå—…æ¢å™¨ä¼šè‡ªåŠ¨å—…æ¢è§†é¢‘å¸§åˆ†è¾¨ç‡
-			//sizeè¡¨ç¤ºè§†é¢‘å¸§åº”è¯¥è¢«ç¼©æ”¾çš„å¤§å°ï¼Œç”¨äºåˆ·æ–°ç¼©æ”¾æ¨¡å—
-			//è¿™é‡Œå°†ç¼©æ”¾æ¨¡å—æ”¾åœ¨è¿™é‡Œã€‚ä¸»è¦æ˜¯å› ä¸ºå—…æ¢å™¨å¯ä»¥è·å–è§†é¢‘å¸§çš„å¸§æ ¼å¼ï¼Œç¼©æ”¾æ¨¡å—çš„åˆå§‹åŒ–éœ€è¦è¿™ä¸ªå¸§æ ¼å¼ã€‚
+			//½øĞĞ×ªÂë£¬´«ÈëµÄÊÓÆµÖ¡¿ÉÒÔ²»Ğ¯´ø·Ö±æÂÊĞÅÏ¢£¬ÒòÎªĞáÌ½Æ÷»á×Ô¶¯ĞáÌ½ÊÓÆµÖ¡·Ö±æÂÊ
+			//size±íÊ¾ÊÓÆµÖ¡Ó¦¸Ã±»Ëõ·ÅµÄ´óĞ¡£¬ÓÃÓÚË¢ĞÂËõ·ÅÄ£¿é
+			//ÕâÀï½«Ëõ·ÅÄ£¿é·ÅÔÚÕâÀï¡£Ö÷ÒªÊÇÒòÎªĞáÌ½Æ÷¿ÉÒÔ»ñÈ¡ÊÓÆµÖ¡µÄÖ¡¸ñÊ½£¬Ëõ·ÅÄ£¿éµÄ³õÊ¼»¯ĞèÒªÕâ¸öÖ¡¸ñÊ½¡£
 			inline int transcoder(NVideoFrame* frame, const NVideoSize& size) {
 				if (!isOpened()) {
 					dbge(logger_, "transcoder is not open! index=[{}].", bgConfig_.index);
@@ -418,7 +418,7 @@ namespace nmedia {
 				return 0;
 			}
 
-			//åˆå§‹åŒ–è§£ç å™¨
+			//³õÊ¼»¯½âÂëÆ÷
             inline int initDecoder(const NCodec::Type typ) {
                 if(!imgCodecCtx_) {
                     int codecId = convertFFCodecID(typ);
@@ -452,7 +452,7 @@ namespace nmedia {
                 return 0;
             }
 
-			//é‡æ–°åˆå§‹åŒ–å›¾åƒç¼©æ”¾æ¨¡å—ï¼Œå½“ä¼ æ¥çš„è§†é¢‘æµåˆ†è¾¨ç‡æœ‰å˜åŒ–æ—¶ä½¿ç”¨
+			//ÖØĞÂ³õÊ¼»¯Í¼ÏñËõ·ÅÄ£¿é£¬µ±´«À´µÄÊÓÆµÁ÷·Ö±æÂÊÓĞ±ä»¯Ê±Ê¹ÓÃ
             inline int reinitRConverter(const int srcWidth, const int srcHeight) {
                 if(0 >= imgConfig_.dstImgSize.width
                 || 0 >= imgConfig_.dstImgSize.height) {
@@ -473,7 +473,7 @@ namespace nmedia {
                 }
 
                 if(!swsFrame_) {
-                    swsFrame_ = av_frame_alloc();       //è¯·åœ¨è§£ç ä»¥åŠä½¿ç”¨åè¿›è¡Œav_frame_unref(pFrame);ä»¥å…é€ æˆå†…å­˜æ³„æ¼,ä¸ä¼šå¯¹æ€§èƒ½é€ æˆå½±å“
+                    swsFrame_ = av_frame_alloc();       //ÇëÔÚ½âÂëÒÔ¼°Ê¹ÓÃºó½øĞĞav_frame_unref(pFrame);ÒÔÃâÔì³ÉÄÚ´æĞ¹Â©,²»»á¶ÔĞÔÄÜÔì³ÉÓ°Ïì
                 }
 
                 if(swsBuf_) {
@@ -505,7 +505,7 @@ namespace nmedia {
                 return 0;
             }
 
-			//åˆå§‹åŒ–å›¾åƒå—…æ¢å™¨ï¼Œç”¨äºä»ç½‘ç»œæµä¸­è¯†åˆ«ä¸€æ•´å¸§å¯ç”¨è§†é¢‘å¸§
+			//³õÊ¼»¯Í¼ÏñĞáÌ½Æ÷£¬ÓÃÓÚ´ÓÍøÂçÁ÷ÖĞÊ¶±ğÒ»ÕûÖ¡¿ÉÓÃÊÓÆµÖ¡
             inline int initImgParser(const NCodec::Type typ) {
                 if(!imgParserCtx_) {
                     int codecId = convertFFCodecID(typ);
@@ -529,30 +529,30 @@ namespace nmedia {
                 return 0;
             }
 
-			//è·å–å½“å‰é€‚åº”æ¨¡å¼ä¸‹åº”ç¼©æ”¾æˆçš„åˆ†è¾¨ç‡
+			//»ñÈ¡µ±Ç°ÊÊÓ¦Ä£Ê½ÏÂÓ¦Ëõ·Å³ÉµÄ·Ö±æÂÊ
             inline void getDstResolution(int srcWidth, int srcHeight) {
 
                 if(contentMode::ScalingModeNone == bgConfig_.fillMode) {
                     imgConfig_.dstImgSize.width = srcWidth;
                     imgConfig_.dstImgSize.height = srcHeight;
-                } else if(contentMode::ScalingModeAspectFit == bgConfig_.fillMode) {      //TODO:è¿™ä¸ªæ¨¡å¼ç¼–å†™çš„æœ‰æ²¡æœ‰é—®é¢˜
+                } else if(contentMode::ScalingModeAspectFit == bgConfig_.fillMode) {      //TODO:Õâ¸öÄ£Ê½±àĞ´µÄÓĞÃ»ÓĞÎÊÌâ
                     
-                    //ä»¥ä¸€æ¡è¾¹ä¸ºåŸºå‡†ç¼©æ”¾
+                    //ÒÔÒ»Ìõ±ßÎª»ù×¼Ëõ·Å
                     imgConfig_.dstImgSize.width = bgConfig_.width;
                     imgConfig_.dstImgSize.height = imgConfig_.dstImgSize.width * srcHeight / srcWidth;
                     if(imgConfig_.dstImgSize.height > bgConfig_.height) {
-                        //ä»¥å¦ä¸€æ¡è¾¹ä¸ºåŸºå‡†ç¼©æ”¾
+                        //ÒÔÁíÒ»Ìõ±ßÎª»ù×¼Ëõ·Å
                         imgConfig_.dstImgSize.height = bgConfig_.height;
                         imgConfig_.dstImgSize.width = srcWidth * imgConfig_.dstImgSize.height / srcHeight;
                     }
 
                 } else if(contentMode::ScalingModeAspectFill == bgConfig_.fillMode) {
 
-                    //ä»¥ä¸€æ¡è¾¹ä¸ºåŸºå‡†ç¼©æ”¾
+                    //ÒÔÒ»Ìõ±ßÎª»ù×¼Ëõ·Å
                     imgConfig_.dstImgSize.width = bgConfig_.width;
                     imgConfig_.dstImgSize.height = imgConfig_.dstImgSize.width * srcHeight / srcWidth;
                     if(imgConfig_.dstImgSize.height < bgConfig_.height) {
-                        //ä»¥å¦ä¸€æ¡è¾¹ä¸ºåŸºå‡†ç¼©æ”¾
+                        //ÒÔÁíÒ»Ìõ±ßÎª»ù×¼Ëõ·Å
                         imgConfig_.dstImgSize.height = bgConfig_.height;
                         imgConfig_.dstImgSize.width = srcWidth * imgConfig_.dstImgSize.height / srcHeight;
                     }
@@ -564,7 +564,7 @@ namespace nmedia {
             }
 
             //Get the position of the image in the background and get the starting point in the image to be printed
-			//è®¡ç®—å‡ºå›¾åƒåœ¨åŒºåŸŸä¸­çš„èµ·å§‹ç‚¹ä»¥åŠå›¾åƒä¸­è¢«ç»˜åˆ¶åƒç´ çš„èµ·å§‹ç‚¹
+			//¼ÆËã³öÍ¼ÏñÔÚÇøÓòÖĞµÄÆğÊ¼µãÒÔ¼°Í¼ÏñÖĞ±»»æÖÆÏñËØµÄÆğÊ¼µã
             inline void calcImgRelatePos(const int imgWidth, const int imgHeight) {
                 imgConfig_.imgInBgx = bgConfig_.x;
                 imgConfig_.imgInBgy = bgConfig_.y;
@@ -572,8 +572,8 @@ namespace nmedia {
                 imgConfig_.imgy = 0;
 
                 if(contentMode::ScalingModeNone == bgConfig_.fillMode) {
-                    //å›¾å°èƒŒæ™¯å¤§ï¼Œåº”è¯¥ç”»å…¨å›¾
-                    //å›¾å¤§èƒŒæ™¯å°ï¼Œåº”è¯¥ç”»æ»¡èƒŒæ™¯
+                    //Í¼Ğ¡±³¾°´ó£¬Ó¦¸Ã»­È«Í¼
+                    //Í¼´ó±³¾°Ğ¡£¬Ó¦¸Ã»­Âú±³¾°
                     if(bgConfig_.width > imgWidth) {
                         // imgConfig_.startPosInImg.first = 0;
                         imgConfig_.imgInBgx += bisectSub(bgConfig_.width, imgWidth);
@@ -638,22 +638,22 @@ namespace nmedia {
 
         };
         
-        //ç”»å¸ƒæ ¼å¼ä¸ºYUV420P
-        //å ç”¨å†…å­˜è®¡ç®—ï¼šwidth * height * (3 / 2)
+        //»­²¼¸ñÊ½ÎªYUV420P
+        //Õ¼ÓÃÄÚ´æ¼ÆËã£ºwidth * height * (3 / 2)
 
-        //1. æœ‰å±‚æ¬¡ç”»å¸ƒï¼Œéœ€è¦è€ƒè™‘å±‚æ¬¡é—®é¢˜ï¼Œå½“å¤„äºä¸‹å±‚è¢«ä¸Šå±‚ä¸å®Œå…¨é®æŒ¡çš„ç”»å¸ƒä¼ æ¥å›¾ç”»æ—¶ï¼Œåº”è¯¥æ€ä¹ˆç”»ï¼Ÿ
-        //ç›®å‰çš„åŠæ³•ï¼šä¿ç•™æ‰€æœ‰é€šé“çš„å½“å‰ä¸€å¸§å›¾åƒï¼Œå½“éœ€è¦è¾“å‡ºæ—¶ï¼Œå°†æ‰€æœ‰å›¾åƒæŒ‰å±‚æ¬¡ä¾æ¬¡ç”»å‡ºã€‚åŒå±‚æ¬¡çš„å›¾åƒä¸åº”è¯¥å‡ºç°é‡å æƒ…å†µï¼Œå¦åˆ™è¿”å›é”™è¯¯ç ã€‚  _______v
+        //1. ÓĞ²ã´Î»­²¼£¬ĞèÒª¿¼ÂÇ²ã´ÎÎÊÌâ£¬µ±´¦ÓÚÏÂ²ã±»ÉÏ²ã²»ÍêÈ«ÕÚµ²µÄ»­²¼´«À´Í¼»­Ê±£¬Ó¦¸ÃÔõÃ´»­£¿
+        //Ä¿Ç°µÄ°ì·¨£º±£ÁôËùÓĞÍ¨µÀµÄµ±Ç°Ò»Ö¡Í¼Ïñ£¬µ±ĞèÒªÊä³öÊ±£¬½«ËùÓĞÍ¼Ïñ°´²ã´ÎÒÀ´Î»­³ö¡£Í¬²ã´ÎµÄÍ¼Ïñ²»Ó¦¸Ã³öÏÖÖØµşÇé¿ö£¬·ñÔò·µ»Ø´íÎóÂë¡£  _______v
 
-        //2. å•ä¸ªåŒºåŸŸå¾—è§†é¢‘æºä¼šä¸ä¼šå‡ºç°ä¸­é€”å˜åŠ¨åˆ†è¾¨ç‡å¾—é—®é¢˜ï¼Ÿ   _______v
+        //2. µ¥¸öÇøÓòµÃÊÓÆµÔ´»á²»»á³öÏÖÖĞÍ¾±ä¶¯·Ö±æÂÊµÃÎÊÌâ£¿   _______v
 
-        //3. å•ä¸ªè§†é¢‘æºçš„å‚æ•°ã€‚ _______v
+        //3. µ¥¸öÊÓÆµÔ´µÄ²ÎÊı¡£ _______v
 
         //4. 
         class Transcoder{
 		public:
 			using DataFunc = std::function<void(uint8_t * data, size_t size)>;
 
-			//è½¬ç å™¨çš„é…ç½®å‚æ•°
+			//×ªÂëÆ÷µÄÅäÖÃ²ÎÊı
 			struct OutputConfig {
 				int width = -1;
 				int height = -1;
@@ -678,10 +678,10 @@ namespace nmedia {
         private:
             NLogger::shared             logger_ = nullptr;
 
-            //éœ€æ±‚ï¼š
-            //RegionConfigä¸­indexä½œä¸ºå¢åˆ æ”¹æŸ¥çš„ç´¢å¼•ï¼ŒzOrderä½œä¸ºç»˜å›¾æ—¶çš„æ’åºkeyã€‚
-            //channelsä½œä¸ºç»˜å›¾æ—¶ç”¨ï¼Œä»¥zOrderä½œä¸ºkeyæ’åº
-            //numbers_ä½œä¸ºå¢åˆ æ”¹æŸ¥æ—¶ç”¨ï¼Œä»¥indexä½œä¸ºå¢åˆ æ”¹æŸ¥çš„ç´¢å¼•
+            //ĞèÇó£º
+            //RegionConfigÖĞindex×÷ÎªÔöÉ¾¸Ä²éµÄË÷Òı£¬zOrder×÷Îª»æÍ¼Ê±µÄÅÅĞòkey¡£
+            //channels×÷Îª»æÍ¼Ê±ÓÃ£¬ÒÔzOrder×÷ÎªkeyÅÅĞò
+            //numbers_×÷ÎªÔöÉ¾¸Ä²éÊ±ÓÃ£¬ÒÔindex×÷ÎªÔöÉ¾¸Ä²éµÄË÷Òı
             std::vector<Region::shared> channels_;
             std::map<int, Region::shared>   numbers_;
 
@@ -691,7 +691,7 @@ namespace nmedia {
 			Region::ImgDrawParam        bgParam_;
             AVFrame*                    outFrame_ = nullptr;
             uint8_t*                    outBuffer_ = nullptr;
-            //av_new_packet()   //ç”³è¯·avpacketçš„bufferç©ºé—´ã€‚
+            //av_new_packet()   //ÉêÇëavpacketµÄbuffer¿Õ¼ä¡£
             //av_packet_alloc();
             AVPacket*                   inPacket_ = nullptr;
             AVPacket*                   outPacaket_ = nullptr;
@@ -707,12 +707,12 @@ namespace nmedia {
                 close();
             }
         
-			//è®¾ç½®è½¬ç å™¨è¾“å‡ºæ•°æ®æ—¶çš„å›è°ƒå‡½æ•°
+			//ÉèÖÃ×ªÂëÆ÷Êä³öÊı¾İÊ±µÄ»Øµ÷º¯Êı
             void output(const DataFunc& func){
                 onEncodeFrame_ = func;
             }
             
-            //åˆå§‹åŒ–è½¬ç å™¨
+            //³õÊ¼»¯×ªÂëÆ÷
             int init(const OutputConfig& cfg){
                 if(isOpened()) {
 					dbge(logger_, "transcoder already opened! cfg=[{}].", cfg_.dump());
@@ -743,16 +743,16 @@ namespace nmedia {
                 return 0;
             }
             
-			//è·å–è½¬ç å™¨å‚æ•°
+			//»ñÈ¡×ªÂëÆ÷²ÎÊı
             const OutputConfig& getOutConfig() const {
                 return cfg_;
             }
 
-			//å¢åŠ ä¸€è·¯æˆ–å¤šè·¯å›¾ï¼Œindexä¸èƒ½é‡å¤ï¼Œå¦‚æœæœ‰é‡å¤ï¼Œåˆ™ç¼©æ”¾å›¾éƒ½æ— æ³•åŠ å…¥ï¼Œéœ€é‡æ–°è°ƒç”¨æ–¹æ³•
+			//Ôö¼ÓÒ»Â·»ò¶àÂ·Í¼£¬index²»ÄÜÖØ¸´£¬Èç¹ûÓĞÖØ¸´£¬ÔòËõ·ÅÍ¼¶¼ÎŞ·¨¼ÓÈë£¬ĞèÖØĞÂµ÷ÓÃ·½·¨
             //ljh: change "setRegions" to "addRegions"
-            //é€»è¾‘ï¼šaddRegionså¯ä»¥å¢åŠ å•ä¸€æˆ–è€…å¤šè·¯åŒºåŸŸ
-            //å½“å¢åŠ çš„åŒºåŸŸç¼–å·ä¸ºå·²æœ‰ç¼–å·æ—¶ï¼Œå¢åŠ å¤±è´¥å¹¶è¿”å›å†²çªç¼–å·ï¼Œä¸ä¼šå¢åŠ ä»»ä½•ç¼–å·åŒºåŸŸ
-            //@channels index must increase from 1ã€‚
+            //Âß¼­£ºaddRegions¿ÉÒÔÔö¼Óµ¥Ò»»òÕß¶àÂ·ÇøÓò
+            //µ±Ôö¼ÓµÄÇøÓò±àºÅÎªÒÑÓĞ±àºÅÊ±£¬Ôö¼ÓÊ§°Ü²¢·µ»Ø³åÍ»±àºÅ£¬²»»áÔö¼ÓÈÎºÎ±àºÅÇøÓò
+            //@channels index must increase from 1¡£
             //@return 0 on success, otherwise negative error code or error number
             int addRegions(const std::vector<Region::RegionConfig>& channels){
                 
@@ -777,7 +777,7 @@ namespace nmedia {
                     dbgt(logger_, "regions joined successfully!, regions=[{}]/[{}].", i.index, i.dump());
                 }
 
-                //æ ¹æ®zè½´æ¬¡åºè¿›è¡Œæ’åº
+                //¸ù¾İzÖá´ÎĞò½øĞĞÅÅĞò
                 std::sort(channels_.begin(), channels_.end(), [](Region::shared a, Region::shared b) {
                     const Region::RegionConfig& cfga = a->getRegionCfg();
                     const Region::RegionConfig& cfgb = b->getRegionCfg();
@@ -787,7 +787,7 @@ namespace nmedia {
                 return 0;
             }
 
-			//ç§»é™¤ä¸€è·¯å›¾
+			//ÒÆ³ıÒ»Â·Í¼
             int removeRegion(const Region::RegionConfig& channel) {
                 for(auto it = channels_.begin(); it != channels_.end(); ++it) {
                     const Region::RegionConfig& ccfg = (*it)->getRegionCfg();
@@ -808,7 +808,7 @@ namespace nmedia {
 				return 0;
             }
 
-			//ç§»é™¤æ‰€æœ‰å›¾
+			//ÒÆ³ıËùÓĞÍ¼
             int removeAllRegions() {
                 for(auto i : channels_) {
                     i->close();
@@ -819,7 +819,7 @@ namespace nmedia {
 				return 0;
             }
 
-			//å½“æœ‰æ•°æ®æ—¶è°ƒç”¨è¯¥æ–¹æ³•è¾“å…¥æ•°æ®
+			//µ±ÓĞÊı¾İÊ±µ÷ÓÃ¸Ã·½·¨ÊäÈëÊı¾İ
             int input(int regionIndex, NVideoFrame * frame){
 				if (!isSupportCodecType(frame->getCodecType())) {
 					dbgi(logger_, "Unsupported codec type! index=[{}], Type=[{}].", regionIndex, NCodec::GetNameFor(frame->getCodecType()));
@@ -843,22 +843,22 @@ namespace nmedia {
 				return channels_[0]->getSrcFrame();
 			}
 
-			//è½¬ç å¹¶å¼‚æ­¥è¾“å‡ºè§†é¢‘æµ
-			//è½¬ç çš„è§†é¢‘æµå‚æ•°ç”±åˆå§‹åŒ–è½¬ç å™¨æ—¶ä¼ å…¥çš„å‚æ•°å†³å®š
-			//è°ƒç”¨transcodeå°†ç¼–ç çš„å¸§é€šè¿‡å›è°ƒå‡½æ•°è¾“å‡º
+			//×ªÂë²¢Òì²½Êä³öÊÓÆµÁ÷
+			//×ªÂëµÄÊÓÆµÁ÷²ÎÊıÓÉ³õÊ¼»¯×ªÂëÆ÷Ê±´«ÈëµÄ²ÎÊı¾ö¶¨
+			//µ÷ÓÃtranscode½«±àÂëµÄÖ¡Í¨¹ı»Øµ÷º¯ÊıÊä³ö
             int transcode() {
                 if(!bgBuffer_
                     || !outPacaket_) {
                     return -1;
                 }
 
-                //ç”¨é»‘è‰²å›¾åƒé‡ç½®èƒŒæ™¯
+                //ÓÃºÚÉ«Í¼ÏñÖØÖÃ±³¾°
                 int ret = brushYUV420P(bgParam_, bgFrame_);
                 if(ret < 0) {
                     return -1;
                 }
 
-                //å°†å„ä¸ªå¼€å¯çš„åŒºåŸŸä¸­çš„å›¾åƒç»˜å…¥èƒŒæ™¯ä¸­
+                //½«¸÷¸ö¿ªÆôµÄÇøÓòÖĞµÄÍ¼Ïñ»æÈë±³¾°ÖĞ
                 for(auto i : channels_) {
                     if(i->isOpened()) {
                         ret = brushYUV420P(i->getDrawParam(), i->getDrawFrame());
@@ -868,7 +868,7 @@ namespace nmedia {
                     }
                 }
 
-                //ç¼–ç 
+                //±àÂë
                 ret = encode();
                 if(ret) {
                     if(ret < 0) {
@@ -877,7 +877,7 @@ namespace nmedia {
                     return 0;
                 }
 
-                //è¾“å‡º
+                //Êä³ö
                 if(onEncodeFrame_) {
                     onEncodeFrame_(outPacaket_->data, outPacaket_->size);
                 }
@@ -886,12 +886,12 @@ namespace nmedia {
                 return 0;
             }
         
-			//è½¬ç å™¨æ˜¯å¦å¼€å¯
+			//×ªÂëÆ÷ÊÇ·ñ¿ªÆô
             bool isOpened() const {
                 return nullptr != imgCodecCtx_;
             }
 
-			//å…³é—­è½¬ç å™¨
+			//¹Ø±Õ×ªÂëÆ÷
             void close() {
 
                 if(bgFrame_) {
@@ -930,13 +930,13 @@ namespace nmedia {
                 }
             }
 
-			//æ˜¯å¦æ”¯æŒä¼ å…¥çš„ç¼–ç ç±»å‹
+			//ÊÇ·ñÖ§³Ö´«ÈëµÄ±àÂëÀàĞÍ
 			bool isSupportCodecType(const NCodec::Type typ) const {
 				return typ == NCodec::Type::H264
 					|| typ == NCodec::Type::VP8;
 			}
         private:
-			//ç¼–ç ä¸€å¸§è§†é¢‘å¸§
+			//±àÂëÒ»Ö¡ÊÓÆµÖ¡
             int encode() {
                 if(!outFrame_
                 || !outPacaket_) {
@@ -967,59 +967,60 @@ namespace nmedia {
                 return 0;
             }
 
-            //å°†å¤šè·¯åŒºåŸŸç”»å…¥ç”»å¸ƒä¸­
-            int brushYUV420P(const Region::ImgDrawParam& imgConfig, const AVFrame* src) {
-                
-                if (!outBuffer_ || !outFrame_) {
-                    dbge(logger_, "An error occurred while painting, the parameter is NULL!");
-                    return -1;
+			//½«¶àÂ·ÇøÓò»­Èë»­²¼ÖĞ
+			int brushYUV420P(const Region::ImgDrawParam& imgConfig, const AVFrame* src) {
+
+				if (!outBuffer_ || !outFrame_) {
+					dbge(logger_, "An error occurred while painting, the parameter is NULL!");
+					return -1;
 				}
-				else if (!src || !src->data) {
-					return 0;
+				else
+					if (!src || !src->data) {
+						return 0;
+					}
+
+				//Ò×¿´°æ±¾
+				//int nYIndex = 0;
+				//int nUVIndex = 0;
+
+				//for (int i = 0; i < imgHeight; ++i) {
+				//	//Y
+				//	memcpy(dst->data[0] + (i + y) * dst->width + x, src->data[0] + (nYIndex + imgy) * src->width + imgx, imgWidth);
+				//	++nYIndex;
+				//}
+
+				//for (int i = 0; i < imgHeight / 2; ++i) {
+				//	//U
+				//	memcpy(dst->data[1] + (i + y / 2) * (dst->width / 2) + x / 2, src->data[1] + (nUVIndex + imgy / 2) * (src->width / 2) + imgx / 2 , imgWidth / 2);
+				//	//V
+				//	memcpy(dst->data[2] + (i + y / 2) * (dst->width / 2) + x / 2, src->data[2] + (nUVIndex + imgy / 2) * (src->width / 2) + imgx / 2, imgWidth / 2);
+				//	++nUVIndex;
+				//}
+
+				//¼ò»¯°æ±¾
+				for (int i = 0; i < imgConfig.drawSize.height; ++i) {
+					//Y
+					memcpy(outFrame_->data[0] + (i + imgConfig.imgInBgy) * outFrame_->width + imgConfig.imgInBgx
+						, src->data[0] + (i + imgConfig.imgy) * src->width + imgConfig.imgx
+						, imgConfig.drawSize.width);
+
+					if (!(i % 2)) {
+						//U
+						memcpy(outFrame_->data[1] + (i + imgConfig.imgInBgy) / 2 * (outFrame_->width / 2) + imgConfig.imgInBgx / 2
+							, src->data[1] + (i + imgConfig.imgy) / 2 * (src->width / 2) + imgConfig.imgx / 2
+							, imgConfig.drawSize.width / 2);
+
+						//V
+						memcpy(outFrame_->data[2] + (i + imgConfig.imgInBgy) / 2 * (outFrame_->width / 2) + imgConfig.imgInBgx / 2
+							, src->data[2] + (i + imgConfig.imgy) / 2 * (src->width / 2) + imgConfig.imgx / 2
+							, imgConfig.drawSize.width / 2);
+					}
 				}
 
-                //æ˜“çœ‹ç‰ˆæœ¬
-                //int nYIndex = 0;
-                //int nUVIndex = 0;
+				return 0;
+			}
 
-                //for (int i = 0; i < imgHeight; ++i) {
-                //	//Y
-                //	memcpy(dst->data[0] + (i + y) * dst->width + x, src->data[0] + (nYIndex + imgy) * src->width + imgx, imgWidth);
-                //	++nYIndex;
-                //}
-
-                //for (int i = 0; i < imgHeight / 2; ++i) {
-                //	//U
-                //	memcpy(dst->data[1] + (i + y / 2) * (dst->width / 2) + x / 2, src->data[1] + (nUVIndex + imgy / 2) * (src->width / 2) + imgx / 2 , imgWidth / 2);
-                //	//V
-                //	memcpy(dst->data[2] + (i + y / 2) * (dst->width / 2) + x / 2, src->data[2] + (nUVIndex + imgy / 2) * (src->width / 2) + imgx / 2, imgWidth / 2);
-                //	++nUVIndex;
-                //}
-
-                //ç®€åŒ–ç‰ˆæœ¬
-                for (int i = 0; i < imgConfig.drawSize.height; ++i) {
-                    //Y
-                    memcpy(outFrame_->data[0] + (i + imgConfig.imgInBgy) * outFrame_->width + imgConfig.imgInBgx
-                            , src->data[0] + (i + imgConfig.imgy) * src->width + imgConfig.imgx
-                            , imgConfig.drawSize.width);
-
-                    if (!(i % 2)) {
-                        //U
-                        memcpy(outFrame_->data[1] + (i + imgConfig.imgInBgy) / 2 * (outFrame_->width / 2) + imgConfig.imgInBgx / 2
-                            , src->data[1] + (i + imgConfig.imgy) / 2 * (src->width / 2) + imgConfig.imgx / 2
-                            , imgConfig.drawSize.width / 2);
-
-                        //V
-                        memcpy(outFrame_->data[2] + (i + imgConfig.imgInBgy) / 2 * (outFrame_->width / 2) + imgConfig.imgInBgx / 2
-                            , src->data[2] + (i + imgConfig.imgy) / 2 * (src->width / 2) + imgConfig.imgx / 2
-                            , imgConfig.drawSize.width / 2);
-                    }
-                }
-
-                return 0;
-            }
-
-			//åˆå§‹åŒ–ç¼–è§£ç å™¨
+			//³õÊ¼»¯±à½âÂëÆ÷
             int initCodec() {
 
                 if(!outFrame_) {
@@ -1055,7 +1056,7 @@ namespace nmedia {
                 return initEncoder();
             }
 
-			//åˆå§‹åŒ–ç¼–ç å™¨
+			//³õÊ¼»¯±àÂëÆ÷
             int initEncoder() {
                 
                 if(!imgCodecCtx_) {
@@ -1105,7 +1106,7 @@ namespace nmedia {
                 return 0;
             }
 
-			//å¡«å……H264ç¼–ç å™¨
+			//Ìî³äH264±àÂëÆ÷
             void paddingH264Codec(AVDictionary** param) {
                 imgCodecCtx_->time_base.num = 1;
                 imgCodecCtx_->time_base.den = 25;
@@ -1123,7 +1124,7 @@ namespace nmedia {
                 av_dict_set(param, "profile", "baseline", 0);
             }
 
-			//å¡«å……VP8ç¼–ç å™¨
+			//Ìî³äVP8±àÂëÆ÷
             void paddingVP8Codec(AVDictionary** param) {
                 imgCodecCtx_->time_base.num = 1;
                 imgCodecCtx_->time_base.den = 90000;
@@ -1133,7 +1134,7 @@ namespace nmedia {
             }
 
             //init background
-			//åˆå§‹åŒ–èƒŒæ™¯
+			//³õÊ¼»¯±³¾°
             int initBG() {
                 if(!bgFrame_) {
                     bgFrame_ = av_frame_alloc();
