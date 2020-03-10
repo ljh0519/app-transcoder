@@ -48,6 +48,9 @@ set(TRANSFMT_SOURCES
     src/NRegion.hpp
     src/YUVMixer.hpp
     src/YUVMixer.cpp
+    src/NTErrorDefined.hpp
+    src/SDLDisplay.cpp
+    src/SDLDisplay.hpp
 )
 
 add_library(core_static STATIC ${TRANSFMT_SOURCES})
@@ -122,7 +125,9 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 endif () 
 
 add_executable(transcoder
-        src/main.cpp
+        app/transcoder/main.cpp
+        app/transcoder/old_transcoder_main.cpp
+        app/transcoder/yuv_mix_main.cpp
             )
 
 target_link_libraries(transcoder 

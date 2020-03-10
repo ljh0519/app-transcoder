@@ -6,7 +6,7 @@
 #include <string>
 
 extern "C" {
-#include "libavutil\frame.h"
+#include "libavutil/frame.h"
 }
 
 class NSDLDisplay {

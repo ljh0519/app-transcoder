@@ -150,6 +150,7 @@ private:
 		else if(fmt == OutFmt::RGB24){
 			return SDL_PIXELFORMAT_BGR24;
 		}
+		return SDL_PIXELFORMAT_IYUV;
 	}
 
 	inline void handleYUVFrame(const AVFrame* frame) {
