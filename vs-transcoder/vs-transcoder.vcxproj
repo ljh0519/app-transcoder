@@ -140,6 +140,7 @@
     <ClCompile Include="..\src\yuv_mix_main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\NTErrorDefined.hpp" />
     <ClInclude Include="..\src\NLogger.hpp" />
     <ClInclude Include="..\src\NMediaBasic.hpp" />
     <ClInclude Include="..\src\NMediaFrame.hpp" />

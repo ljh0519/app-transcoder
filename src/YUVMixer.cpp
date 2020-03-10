@@ -5,6 +5,7 @@
 
 #include "NLogger.hpp"
 #include "YUVMixer.hpp"
+#include "NTErrorDefined.hpp"
 
 #include "NMediaBasic.hpp"
 
@@ -19,7 +20,7 @@ namespace nmedia {
 		public:
 			static const int OUT_FF_FMT = AV_PIX_FMT_YUV420P;
         private:
-            //ÇøÓòÖĞ½«±»»æÖÆµÄÍ¼ÏñµÄ²ÎÊı
+            //åŒºåŸŸä¸­å°†è¢«ç»˜åˆ¶çš„å›¾åƒçš„å‚æ•°
             struct ImgDrawParam {
                 //The starting position on background
                 int imgInBgx = -1;
@@ -35,7 +36,7 @@ namespace nmedia {
             struct RegionImpl{
 				using shared = std::shared_ptr< RegionImpl>;
 
-                Region                  region_;
+                RegionConfig            region_;
                 ImgDrawParam            imgConfig_;
                 AVFrame*                swsFrame_ = nullptr;
                 uint8_t*                swsBuf_ = nullptr;
@@ -58,30 +59,33 @@ namespace nmedia {
 					}
 				}
 
-				// ½«ÊäÈëÖ¡µ÷ÕûÖÁÄ¿±ê·Ö±æÂÊ
-				// -1 : ´«Èë²ÎÊı²»ºÏ·¨
+				// å°†è¾“å…¥å¸§è°ƒæ•´è‡³ç›®æ ‡åˆ†è¾¨ç‡
+				// -1 : ä¼ å…¥å‚æ•°ä¸åˆæ³•
+				// >= 0 : è½¬æ¢å›¾åƒçš„è¡Œé«˜
 				int zoom(const AVFrame* input) {
 					if (!input
 						|| !input->data) {
-						return -1;
+						return EXTERNAL_PARAM_NOT_VAILD;
 					}
 
-					if (imgConvertCtx_) {
-						sws_scale(imgConvertCtx_, (const uint8_t* const*)input->data, input->linesize, 0, input->height,
-							swsFrame_->data, swsFrame_->linesize);
+					if (!imgConvertCtx_) {
+						return INTERNAL_PARAM_NOT_VAILD;
 					}
+
+					return sws_scale(imgConvertCtx_, (const uint8_t* const*)input->data, input->linesize, 0, input->height,
+							swsFrame_->data, swsFrame_->linesize);
 				}
 
-				// µ±´«ÈëµÄÊÓÆµÊı¾İ·Ö±æÂÊ¸Ä±äÊ±£¬ĞèÒªµ÷ÓÃ¸Ä·½·¨
-				// ´íÎó·µ»Ø¸ºÖµ£¬·ñÔò·µ»Ø0
-				// -1 : ´«Èë²ÎÊı²»ºÏ·¨
-				// -2 : ´´½¨Ëõ·ÅÆ÷Ê§°Ü
-				// -3 : Ìî³äÄ¿±êÇøÓòÊ§°Ü
+				// å½“ä¼ å…¥çš„è§†é¢‘æ•°æ®åˆ†è¾¨ç‡æ”¹å˜æ—¶ï¼Œéœ€è¦è°ƒç”¨æ”¹æ–¹æ³•
+				// é”™è¯¯è¿”å›è´Ÿå€¼ï¼Œå¦åˆ™è¿”å›0
+				// -1 : ä¼ å…¥å‚æ•°ä¸åˆæ³•
+				// -2 : åˆ›å»ºç¼©æ”¾å™¨å¤±è´¥
+				// -3 : å¡«å……ç›®æ ‡åŒºåŸŸå¤±è´¥
 				int onChangeResolution(const int srcWidth, const int srcHeight, const AVPixelFormat typ) {
 					if (srcWidth <= 0
 						|| srcHeight <= 0
 						|| typ < 0) {
-						return -1;
+						return EXTERNAL_PARAM_NOT_VAILD;
 					}
 
 					int ret = 0;
@@ -101,7 +105,7 @@ namespace nmedia {
 						, (AVPixelFormat)OUT_FF_FMT, SWS_BICUBIC, NULL, NULL, NULL);
 					if (!imgConvertCtx_) {
 						//dbge(logger_, "Could not init resolution converter! index=[{}].", bgConfig_.index);
-						return -2;
+						return FAILED_INIT_CONVERTER;
 					}
 					
 					if (!swsFrame_) {
@@ -121,7 +125,7 @@ namespace nmedia {
 						, imgConfig_.dstImgSize.width
 						, imgConfig_.dstImgSize.height, 1) < 0) {
 						//dbge(logger_, "Could not init swsFrame buffer! index=[{}].", bgConfig_.index);
-						return -3;
+						return FAILED_FILL_BUFFER;
 					}
 
 					swsFrame_->width = imgConfig_.dstImgSize.width;
@@ -132,31 +136,31 @@ namespace nmedia {
 				}
 
 			private:
-				//»ñÈ¡µ±Ç°ÊÊÓ¦Ä£Ê½ÏÂÓ¦Ëõ·Å³ÉµÄ·Ö±æÂÊ
+				//è·å–å½“å‰é€‚åº”æ¨¡å¼ä¸‹åº”ç¼©æ”¾æˆçš„åˆ†è¾¨ç‡
 				inline void getDstResolution(int srcWidth, int srcHeight) {
 
 					if (ScalingMode::None == region_.scalinglMode) {
 						imgConfig_.dstImgSize.width = srcWidth;
 						imgConfig_.dstImgSize.height = srcHeight;
 					}
-					else if (ScalingMode::AspectFit == region_.scalinglMode) {      //TODO:Õâ¸öÄ£Ê½±àĞ´µÄÓĞÃ»ÓĞÎÊÌâ
+					else if (ScalingMode::AspectFit == region_.scalinglMode) {      //TODO:è¿™ä¸ªæ¨¡å¼ç¼–å†™çš„æœ‰æ²¡æœ‰é—®é¢˜
 
-					 //ÒÔÒ»Ìõ±ßÎª»ù×¼Ëõ·Å
+					 //ä»¥ä¸€æ¡è¾¹ä¸ºåŸºå‡†ç¼©æ”¾
 						imgConfig_.dstImgSize.width = region_.width;
 						imgConfig_.dstImgSize.height = imgConfig_.dstImgSize.width * srcHeight / srcWidth;
 						if (imgConfig_.dstImgSize.height > region_.height) {
-							//ÒÔÁíÒ»Ìõ±ßÎª»ù×¼Ëõ·Å
+							//ä»¥å¦ä¸€æ¡è¾¹ä¸ºåŸºå‡†ç¼©æ”¾
 							imgConfig_.dstImgSize.height = region_.height;
 							imgConfig_.dstImgSize.width = srcWidth * imgConfig_.dstImgSize.height / srcHeight;
 						}
 					}
 					else if (ScalingMode::AspectFill == region_.scalinglMode) {
 
-						//ÒÔÒ»Ìõ±ßÎª»ù×¼Ëõ·Å
+						//ä»¥ä¸€æ¡è¾¹ä¸ºåŸºå‡†ç¼©æ”¾
 						imgConfig_.dstImgSize.width = region_.width;
 						imgConfig_.dstImgSize.height = imgConfig_.dstImgSize.width * srcHeight / srcWidth;
 						if (imgConfig_.dstImgSize.height < region_.height) {
-							//ÒÔÁíÒ»Ìõ±ßÎª»ù×¼Ëõ·Å
+							//ä»¥å¦ä¸€æ¡è¾¹ä¸ºåŸºå‡†ç¼©æ”¾
 							imgConfig_.dstImgSize.height = region_.height;
 							imgConfig_.dstImgSize.width = srcWidth * imgConfig_.dstImgSize.height / srcHeight;
 						}
@@ -167,14 +171,14 @@ namespace nmedia {
 						imgConfig_.dstImgSize.height = region_.height;
 					}
 
-					//°´±ÈÀıÇóµÃ¶ÔÆë±ÈÀı·Ö±æÂÊ£¬ffmpeg¹æ¶¨Ëõ·ÅµÄÄ¿±ê³ß´ç±ØĞëÎª16µÄ±¶Êı
+					//æŒ‰æ¯”ä¾‹æ±‚å¾—å¯¹é½æ¯”ä¾‹åˆ†è¾¨ç‡ï¼Œffmpegè§„å®šç¼©æ”¾çš„ç›®æ ‡å°ºå¯¸å¿…é¡»ä¸º16çš„å€æ•°
 					float ratio = 1.0f * imgConfig_.dstImgSize.width / imgConfig_.dstImgSize.height;
 					imgConfig_.dstImgSize.height = (imgConfig_.dstImgSize.height >> 4) << 4;
 					imgConfig_.dstImgSize.width = (int(ratio * imgConfig_.dstImgSize.height) >> 4) << 4;
 				}
 
 				//Get the position of the image in the background and get the starting point in the image to be printed
-				//¼ÆËã³öÍ¼ÏñÔÚÇøÓòÖĞµÄÆğÊ¼µãÒÔ¼°Í¼ÏñÖĞ±»»æÖÆÏñËØµÄÆğÊ¼µã
+				//è®¡ç®—å‡ºå›¾åƒåœ¨åŒºåŸŸä¸­çš„èµ·å§‹ç‚¹ä»¥åŠå›¾åƒä¸­è¢«ç»˜åˆ¶åƒç´ çš„èµ·å§‹ç‚¹
 				inline void calcImgRelatePos(const int imgWidth, const int imgHeight) {
 					imgConfig_.imgInBgx = region_.x;
 					imgConfig_.imgInBgy = region_.y;
@@ -182,8 +186,8 @@ namespace nmedia {
 					imgConfig_.imgy = 0;
 
 					if (ScalingMode::None == region_.scalinglMode) {
-						//Í¼Ğ¡±³¾°´ó£¬Ó¦¸Ã»­È«Í¼
-						//Í¼´ó±³¾°Ğ¡£¬Ó¦¸Ã»­Âú±³¾°
+						//å›¾å°èƒŒæ™¯å¤§ï¼Œåº”è¯¥ç”»å…¨å›¾
+						//å›¾å¤§èƒŒæ™¯å°ï¼Œåº”è¯¥ç”»æ»¡èƒŒæ™¯
 						if (region_.width > imgWidth) {
 							// imgConfig_.startPosInImg.first = 0;
 							imgConfig_.imgInBgx += bisectSub(region_.width, imgWidth);
@@ -245,13 +249,6 @@ namespace nmedia {
 						imgConfig_.drawSize.height = imgConfig_.dstImgSize.height;
 					}
 
-					//if (region_.width < imgConfig_.drawSize.width) {
-					//	imgConfig_.drawSize.width = region_.width;
-					//}
-					//
-					//if (region_.height < imgConfig_.drawSize.height) {
-					//	imgConfig_.drawSize.height = region_.height;
-					//}
 				}
 
 				inline int bisectSub(int val1, int val2) {
@@ -266,7 +263,7 @@ namespace nmedia {
 			NLogger::shared logger_ = nullptr;
 			std::vector< RegionImpl::shared> regions_;
 			std::map<int, RegionImpl::shared> numbers_;
-			uint32_t					backgroundColor_ = 0x008080;		//YUV	ºÚ
+			uint32_t					backgroundColor_ = 0x008080;		//YUV	é»‘
 			AVFrame*					outFrame_ = nullptr;
 			uint8_t*					outBuf_ = nullptr;
         public:
@@ -275,12 +272,12 @@ namespace nmedia {
 
             ~YUVMixerImpl(){}
             
-            // ÉèÖÃÊä³öÍ¼Ïñ³ß´ç
+            // è®¾ç½®è¾“å‡ºå›¾åƒå°ºå¯¸
 			// bkground_color : RGB24
             virtual int outputConfig(int width, int height, uint32_t bkground_color) override{
 				if (1 > width
 				||  1 > height) {
-					return -1;
+					return EXTERNAL_PARAM_NOT_VAILD;
 				}
 
 				av_log_set_level(AV_LOG_QUIET);
@@ -317,27 +314,25 @@ namespace nmedia {
 					, outFrame_->width
 					, outFrame_->height, 1) < 0) {
 					//dbge(logger_, "Could not init swsFrame buffer! index=[{}].", bgConfig_.index);
-					return -3;
+					return FAILED_FILL_BUFFER;
 				}
 
-				//ÖØÖÃÄ¿±êyuvÍ¼ÏñÎªÄ³ÖÖµ¥Ò»ÑÕÉ«
-				resetBgByYuv420p(outFrame_, backgroundColor_);
-
-                return 0;
+				//é‡ç½®ç›®æ ‡yuvå›¾åƒä¸ºæŸç§å•ä¸€é¢œè‰²
+				return resetBgByYuv420p(backgroundColor_);
             }
             
-            // Ìí¼ÓÒ»¸öRegion
-            // ·µ»ØÖµ >=0 ±íÊ¾³É¹¦£¬·µ»ØÖµÎªRegionµÄindex
-			// -1 £º region²ÎÊı²»ºÏ·¨
-			// -2 £º region.indexÖØ¸´
-            virtual int addRegion(const Region& r) override{
+            // æ·»åŠ ä¸€ä¸ªRegion
+            // è¿”å›å€¼ >=0 è¡¨ç¤ºæˆåŠŸï¼Œè¿”å›å€¼ä¸ºRegionçš„index
+			// -1 ï¼š regionå‚æ•°ä¸åˆæ³•
+			// -2 ï¼š region.indexé‡å¤
+            virtual int addRegion(const RegionConfig& r) override{
 				if (!r.valid()) {
-					return -1;
+					return EXTERNAL_PARAM_NOT_VAILD;
 				}
 
 				auto search = numbers_.find(r.index);
 				if (search != numbers_.end()) {
-					return -2;
+					return PARAM_EXISTS;
 				}
 
 				RegionImpl::shared regionImp = std::make_shared< RegionImpl>();
@@ -346,7 +341,7 @@ namespace nmedia {
 				regions_.push_back(regionImp);
 				numbers_[r.index] = regionImp;
 
-				//¸ù¾İzÖá´ÎĞò½øĞĞÅÅĞò
+				//æ ¹æ®zè½´æ¬¡åºè¿›è¡Œæ’åº
 				std::sort(regions_.begin(), regions_.end(), [](RegionImpl::shared a, RegionImpl::shared b) {
 					return a->region_.zOrder < b->region_.zOrder;
 				});
@@ -354,30 +349,30 @@ namespace nmedia {
                 return r.index;
             }
             
-            // ÉèÖÃRegionÁĞ±í£¬¾ÉµÄRegionÁĞ±í±»Çå¿Õ²¢ÉèÖÃ³ÉĞÂµÄRegionÁĞ±í
-			// Èç¹ûĞÂµÄregionÁĞ±íÖĞÓĞregion²ÎÊı²»ÕıÈ·£¬Ôò²»»áÓĞÈÎºÎregion±»³É¹¦ÉèÖÃ
-			// ´íÎó·µ»Ø´íÎóÂë£¨¸ºÖµ£©£¬region²ÎÊı´íÎó·µ»Øindex£¬ÕıÈ··µ»Ø0
-			// -1 £º indexÖØ¸´
-			// <= 0 : region²ÎÊı·Ç·¨£¬·µ»Ø·Ç·¨index
-            virtual int setRegions(const std::vector<Region>& v) override{
-				regions_.clear();
-				numbers_.clear();
-
+            // è®¾ç½®Regionåˆ—è¡¨ï¼Œæ—§çš„Regionåˆ—è¡¨è¢«æ¸…ç©ºå¹¶è®¾ç½®æˆæ–°çš„Regionåˆ—è¡¨
+			// å¦‚æœæ–°çš„regionåˆ—è¡¨ä¸­æœ‰regionå‚æ•°ä¸æ­£ç¡®ï¼Œåˆ™ä¸ä¼šæœ‰ä»»ä½•regionè¢«æˆåŠŸè®¾ç½®
+			// é”™è¯¯è¿”å›é”™è¯¯ç ï¼ˆè´Ÿå€¼ï¼‰ï¼Œregionå‚æ•°é”™è¯¯è¿”å›indexï¼Œæ­£ç¡®è¿”å›0
+			// -1 ï¼š indexé‡å¤
+			// < 0 : regionå‚æ•°éæ³•ï¼Œè¿”å›éæ³•index
+            virtual int setRegions(const std::vector<RegionConfig>& v) override{
 				{
+					std::map<int, std::shared_ptr<RegionImpl::shared>> tmp;
 					for (auto& i : v) {
-						//Region²ÎÊıºÏ·¨ĞÔ¼ì²é
+						//Regionå‚æ•°åˆæ³•æ€§æ£€æŸ¥
 						if (!i.valid()) {
 							return i.index;
 						}
-						numbers_[i.index] = nullptr;
+						tmp[i.index] = nullptr;
 					}
 
-					//Region.indexÖØ¸´ĞÔ¼ì²é
-					if (v.size() != numbers_.size()) {
-						return -1;
+					//Region.indexé‡å¤æ€§æ£€æŸ¥
+					if (v.size() != tmp.size()) {
+						return PARAM_EXISTS;
 					}
-					numbers_.clear();
 				}
+
+				regions_.clear();
+				numbers_.clear();
 
 				for (auto& i : v) {
 					RegionImpl::shared regionImp = std::make_shared< RegionImpl>();
@@ -387,7 +382,7 @@ namespace nmedia {
 					numbers_[i.index] = regionImp;
 				}
 
-				//¸ù¾İzÖá´ÎĞò½øĞĞÅÅĞò
+				//æ ¹æ®zè½´æ¬¡åºè¿›è¡Œæ’åº
 				std::sort(regions_.begin(), regions_.end(), [](RegionImpl::shared a, RegionImpl::shared b) {
 					return a->region_.zOrder < b->region_.zOrder;
 				});
@@ -395,20 +390,20 @@ namespace nmedia {
                 return 0;
             }
             
-            // ÊäÈë1Ö¡Êı¾İµ½Ö¸¶¨Region£¬´íÎó·µ»Ø¸ºÖµ£¬·ñÔò·µ»Ø0
-			// -1 : frameÎªnull
-			// -2 : Ã»ÓĞÕÒµ½¶ÔÓ¦region
-			// -3 : ·Ö±æÂÊ±ä¸ü³ö´í
+            // è¾“å…¥1å¸§æ•°æ®åˆ°æŒ‡å®šRegionï¼Œé”™è¯¯è¿”å›è´Ÿå€¼ï¼Œå¦åˆ™è¿”å›0
+			// -1 : frameä¸ºnull
+			// -2 : æ²¡æœ‰æ‰¾åˆ°å¯¹åº”region
+			// -3 : åˆ†è¾¨ç‡å˜æ›´å‡ºé”™
             virtual int inputRegionFrame(int region_index,
                                          const AVFrame * frame) override{
 				if (!frame
 					|| !frame->data) {
-					return -1;
+					return EXTERNAL_PARAM_NOT_VAILD;
 				}
 
 				auto search = numbers_.find(region_index);
 				if (search == numbers_.end()) {
-					return -2;
+					return PARAM_NOT_EXISTS;
 				}
 
 				if (frame->width != search->second->imgConfig_.srcImgSize.width
@@ -416,7 +411,7 @@ namespace nmedia {
 					int ret = search->second->onChangeResolution(frame->width, frame->height, (AVPixelFormat)frame->format);
 					if (ret < 0) {
 						dbge(logger_, "change resolution error! index=[{}], error=[{}].", search->first, ret);
-						return -3;
+						return FAILED_INIT_CONVERTER;
 					}
 					search->second->imgConfig_.srcImgSize.width = frame->width;
 					search->second->imgConfig_.srcImgSize.height = frame->height;
@@ -425,14 +420,11 @@ namespace nmedia {
                 return search->second->zoom(frame);
             }
             
-            // Êä³ö1Ö¡Í¼Ïñ
+            // è¾“å‡º1å¸§å›¾åƒ
             virtual const AVFrame * outputFrame() override{
-				if (!outFrame_
-				||	!outBuf_) {
+				if (resetBgByYuv420p( backgroundColor_) < 0) {
 					return nullptr;
 				}
-
-				resetBgByYuv420p(outFrame_, backgroundColor_);
 
 				for (auto i : regions_) {
 					if (brushYUV420P(i->imgConfig_, i->swsFrame_) < 0) {
@@ -444,25 +436,28 @@ namespace nmedia {
             }
             
 		private:
-			void resetBgByYuv420p(AVFrame* frame, uint32_t yuvColor) {
-				if (!frame
-					|| !frame->data) {
-					return ;
+			int resetBgByYuv420p(uint32_t yuvColor) {
+				if (!outFrame_
+					|| !outFrame_->data) {
+					return INTERNAL_PARAM_NOT_VAILD;
 				}
 
-				memset(frame->data[0], (uint8_t)(yuvColor>>16), frame->width * frame->height * 1 * sizeof(uint8_t));
-				memset(frame->data[1], (uint8_t)(yuvColor>>8),	frame->width * frame->height / 4 * sizeof(uint8_t));
-				memset(frame->data[2], (uint8_t)(yuvColor),		frame->width * frame->height / 4 * sizeof(uint8_t));
+				memset(outFrame_->data[0], (uint8_t)(yuvColor>>16), outFrame_->width * outFrame_->height * 1 * sizeof(uint8_t));
+				memset(outFrame_->data[1], (uint8_t)(yuvColor>>8), outFrame_->width * outFrame_->height / 4 * sizeof(uint8_t));
+				memset(outFrame_->data[2], (uint8_t)(yuvColor), outFrame_->width * outFrame_->height / 4 * sizeof(uint8_t));
+
+				return 0;
 			}
 
-			//½«¶àÂ·ÇøÓò»­Èë»­²¼ÖĞ
+			//å°†å¤šè·¯åŒºåŸŸç”»å…¥ç”»å¸ƒä¸­
 			int brushYUV420P(const ImgDrawParam& imgConfig, const AVFrame* src) {
 
-				if (!outBuf_ || !outFrame_) {
+				if (!outBuf_ 
+				|| !outFrame_) {
 					dbge(logger_, "An error occurred while painting, the parameter is NULL!");
-					return -1;
-				} else
-				if (!src || !src->data) {
+					return INTERNAL_PARAM_NOT_VAILD;
+				} else if (!src 
+					|| !src->data) {
 					return 0;
 				}
 
@@ -478,7 +473,7 @@ namespace nmedia {
 				}
 				//int drawWidth = (imgConfig.drawSize.width + imgConfig.imgInBgx > outFrame_->width) ? (outFrame_->width - imgConfig.imgInBgx) ? imgConfig.drawSize.width;
 
-				//Ò×¿´°æ±¾
+				//æ˜“çœ‹ç‰ˆæœ¬
 				//int nYIndex = 0;
 				//int nUVIndex = 0;
 
@@ -496,7 +491,7 @@ namespace nmedia {
 				//	++nUVIndex;
 				//}
 
-				//¼ò»¯°æ±¾
+				//ç®€åŒ–ç‰ˆæœ¬
 				for (int i = 0; i < drawHeight; ++i) {
 					//Y
 					memcpy(outFrame_->data[0] + (i + imgConfig.imgInBgy) * outFrame_->width + imgConfig.imgInBgx

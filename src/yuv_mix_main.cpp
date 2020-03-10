@@ -154,7 +154,7 @@ int yuv_mix_main(int argc, char* argv[]) {
 
 	//check setRegions
 	{
-		std::vector<nmedia::video::Region> v;
+		std::vector<nmedia::video::RegionConfig> v;
 		v.push_back({ 0, 0 , 0, 400, 800, 1, nmedia::video::ScalingMode::Fill });
 		v.push_back({ 1, 400 , 0 , 400, 800, 1, nmedia::video::ScalingMode::AspectFit });
 

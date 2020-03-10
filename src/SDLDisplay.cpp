@@ -110,7 +110,7 @@ private:
 
 		while (1) {
 			SDL_WaitEvent(&event);
-			if (event.type = REFRESH_EVENT) {
+			if (event.type == REFRESH_EVENT) {
 				const AVFrame* outFrame = input_();
 				if (!outFrame) {
 					break;

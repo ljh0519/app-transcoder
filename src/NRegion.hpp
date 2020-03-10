@@ -6,14 +6,14 @@ namespace nmedia {
     namespace video{
         enum class ScalingMode {
             Unknown = 0,
-            None,        //ÎŞËõ·Å
-            AspectFit,   //Í¬±ÈÊÊÅä£¬µÈ±ÈËõ·Å£¬Ä³¸ö·½Ïò»áÓĞºÚ±ß
-            AspectFill,  //Í¬±ÈÌî³ä£¬ÎŞºÚ±ß£¬Ä³¸ö·½ÏòµÄÏÔÊ¾ÄÚÈİ¿ÉÄÜ±»²Ã¼ô
-            Fill         //ÂúÆÁÌî³ä£¬ÆÆ»µÔ­ÊÓÆµ±ÈÀı£¬ÓëÔ­Ê¼ÊÓÆµ±ÈÀı²»Ò»ÖÂ
+            None,        //æ— ç¼©æ”¾
+            AspectFit,   //åŒæ¯”é€‚é…ï¼Œç­‰æ¯”ç¼©æ”¾ï¼ŒæŸä¸ªæ–¹å‘ä¼šæœ‰é»‘è¾¹
+            AspectFill,  //åŒæ¯”å¡«å……ï¼Œæ— é»‘è¾¹ï¼ŒæŸä¸ªæ–¹å‘çš„æ˜¾ç¤ºå†…å®¹å¯èƒ½è¢«è£å‰ª
+            Fill         //æ»¡å±å¡«å……ï¼Œç ´ååŸè§†é¢‘æ¯”ä¾‹ï¼Œä¸åŸå§‹è§†é¢‘æ¯”ä¾‹ä¸ä¸€è‡´
         };
         
-        struct Region {
-            //       ×ø±ê¶¨Òå
+        struct RegionConfig {
+            //       åæ ‡å®šä¹‰
             //          x
             //  ------------------->
             //  | ----------------
@@ -27,7 +27,7 @@ namespace nmedia {
             int             y = -1;
             int             width = -1;
             int             height = -1;
-            int             zOrder = -1;        //zOrderÊı×ÖÔ½´ó£¬ËùÔÚ²ã´ÎÔ½¸ß£¬Ô½²»»á±»ÕÚµ²¡£
+            int             zOrder = -1;        //zOrderæ•°å­—è¶Šå¤§ï¼Œæ‰€åœ¨å±‚æ¬¡è¶Šé«˜ï¼Œè¶Šä¸ä¼šè¢«é®æŒ¡ã€‚
             ScalingMode     scalinglMode = ScalingMode::AspectFit;
             
             bool valid() const {
